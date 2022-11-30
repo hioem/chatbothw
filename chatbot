@@ -1,0 +1,480 @@
+import java.util.*;
+
+public class Check
+{
+    private static final String[] MODAL_AUXILIARIES  = {"can", "could", "may", "might", "must", "shall", "should", "will", "would"},
+            words = {"who", "what", "when", "where", "how", "which"},
+            pronoun = {"i", "you", "he", "she", "it", "that", "we", "they"},
+            oPronoun = {"me", "you", "him", "her", "it", "that", "us", "them"},
+            verbs = {"am", "are", "is", "is", "is", "is", "are", "are"};
+
+
+    public static boolean isQuestion(String statement)
+    {
+        for(String word : MODAL_AUXILIARIES)
+        {
+            for(String pronoun : pronoun)
+            {
+                String wordAfterWord = wordAfter(statement, word);
+
+                if(pronoun.equals(wordAfterWord))
+                {
+                    return true;
+                }
+            }
+        }
+
+        for(String word : verbs)
+        {
+            for(String pronoun : pronoun)
+            {
+                String wordAfterWord = wordAfter(statement, word);
+
+                if(pronoun.equals(wordAfterWord))
+                {
+                    return true;
+                }
+            }
+        }
+
+        for(String word : words)
+        {
+            if(findKeyword(statement, word) >= 0)
+            {
+                return true;
+            }
+        }
+
+        return statement.indexOf('?') >= 0;
+    }
+
+
+    public static String wordAfter(String statement, String word)
+    {
+        int positionOfWord = findKeyword(statement, word);
+
+        if(positionOfWord < 0)
+        {
+            return "";
+        }
+
+        for(int i = positionOfWord + word.length() + 1; i < statement.length(); i++)
+        {
+            if(statement.charAt(i) == ' ')
+            {
+                return statement.substring(positionOfWord + word.length() + 1, i);
+            }
+            else if(i == statement.length() - 1)
+            {
+                return statement.substring(positionOfWord + word.length() + 1);
+            }
+        }
+        return "";
+    }
+
+
+    public static String wordBefore(String statement, String word)
+    {
+        int positionOfWord = findKeyword(statement, word);
+
+        if(positionOfWord <= 1)
+        {
+            return "";
+        }
+
+        for(int i = positionOfWord - 2; i >= 0; i--)
+        {
+            if(statement.charAt(i) == ' ')
+            {
+                return statement.substring(i + 1, positionOfWord - 1);
+            }
+            else if(i == 0)
+            {
+                return statement.substring(0, positionOfWord - 1);
+            }
+        }
+        return "";
+    }
+
+    public static String removeContractions(String statement)
+    {
+        int positionOfApostrophe = statement.indexOf("'");
+
+        if(positionOfApostrophe < 0)
+        {
+            return statement;
+        }
+
+        for(int i = positionOfApostrophe - 1; i >= 0; i--)
+        {
+            String subject, beforeContraction, afterContraction;
+
+            if(statement.charAt(i) == ' ')
+            {
+                subject = statement.substring(i + 1, positionOfApostrophe);
+                beforeContraction = statement.substring(0, i + 1);
+                afterContraction = statement.substring(statement.indexOf(' ', positionOfApostrophe));
+
+                if(subject.equals("don"))
+                {
+                    String newStatement = beforeContraction + "do not" + afterContraction;
+                    return removeContractions(newStatement);
+                }
+                else if(subject.equals("can"))
+                {
+                    String newStatement = beforeContraction + "cannot" + afterContraction;
+                    return removeContractions(newStatement);
+                }
+                else if(subject.equals("aren"))
+                {
+                    String newStatement = beforeContraction + "are not" + afterContraction;
+                    return removeContractions(newStatement);
+                }
+                else if(listContainsItem(pronoun, subject))
+                {
+                    String newVerb = verbs[indexOfItemInList(pronoun, subject)];
+                    String newStatement = beforeContraction + subject + ' ' + newVerb + afterContraction;
+                    return removeContractions(newStatement);
+                }
+                else
+                {
+                    String newStatement = beforeContraction + subject + " is" + afterContraction;
+                    return removeContractions(newStatement);
+                }
+            }
+            else if(i == 0)
+            {
+                subject = statement.substring(0, positionOfApostrophe);
+                beforeContraction = "";
+                afterContraction = statement.substring(statement.indexOf(' ', positionOfApostrophe));
+
+                if(subject.equals("don"))
+                {
+                    String newStatement = beforeContraction + "do not" + afterContraction;
+                    return removeContractions(newStatement);
+                }
+                else if(subject.equals("can"))
+                {
+                    String newStatement = beforeContraction + "cannot" + afterContraction;
+                    return removeContractions(newStatement);
+                }
+                else if(subject.equals("aren"))
+                {
+                    String newStatement = beforeContraction + "are not" + afterContraction;
+                    return removeContractions(newStatement);
+                }
+                else if(listContainsItem(pronoun, subject))
+                {
+                    String newVerb = verbs[indexOfItemInList(pronoun, subject)];
+                    String newStatement = beforeContraction + subject + ' ' + newVerb + afterContraction;
+                    return removeContractions(newStatement);
+                }
+                else
+                {
+                    String newStatement = beforeContraction + subject + " is" + afterContraction;
+                    return removeContractions(newStatement);
+                }
+            }
+        }
+
+        if(positionOfApostrophe < 0)
+        {
+            return statement;
+        }
+
+        String subject = statement.substring(0, positionOfApostrophe);
+        String afterContraction = statement.substring(statement.indexOf(' ', positionOfApostrophe));
+        String newVerb = verbs[indexOfItemInList(pronoun, subject)];
+        String newStatement = subject + ' ' + newVerb + afterContraction;
+
+        return removeContractions(newStatement);
+    }
+
+    public static String invertPointOfView(String statement)
+    {
+        String answer = statement;
+
+        while(containsSubjectPronoun(statement))
+        {
+            String actualSubject = findSubjectPronoun(statement);
+            String invertedSubject = actualSubject;
+            int positionOfSubject = findKeyword(statement, actualSubject);
+
+            switch(actualSubject)
+            {
+                case "i":
+                case "we":
+                    invertedSubject = "you";
+                    break;
+                case "you":
+                    invertedSubject = "I";
+                    break;
+            }
+
+            String beforeSubject = answer.substring(0, positionOfSubject);
+            String afterSubject = answer.substring(positionOfSubject + actualSubject.length());
+
+            answer =  beforeSubject + invertedSubject + afterSubject;
+
+            String placeholder = generateStars(invertedSubject.length());
+            beforeSubject = statement.substring(0, positionOfSubject);
+            afterSubject = statement.substring(positionOfSubject + actualSubject.length());
+
+            statement = beforeSubject + placeholder + afterSubject;
+            statement = statement.trim();
+        }
+
+        while(containsObjectPronoun(statement))
+        {
+            String actualObject = findObjectPronoun(statement);
+            String invertedObject = actualObject;
+            int positionOfObject = findKeyword(statement, actualObject);
+
+            switch(actualObject)
+            {
+                case "me":
+                case "us":
+                    invertedObject = "you";
+                    break;
+                case "you":
+                    invertedObject = "me";
+                    break;
+            }
+
+            String beforeObject = answer.substring(0, positionOfObject);
+            String afterObject = answer.substring(positionOfObject + actualObject.length());
+
+            answer =  beforeObject + invertedObject + afterObject;
+
+            String placeholder = generateStars(invertedObject.length());
+            beforeObject = statement.substring(0, positionOfObject);
+            afterObject = statement.substring(positionOfObject + actualObject.length());
+
+            statement = beforeObject + placeholder + afterObject;
+            statement = statement.trim();
+        }
+
+        while(containsBeVerb(statement))
+        {
+            String actualVerb = findBeVerb(statement);
+            String invertedVerb = actualVerb;
+            int positionOfVerb = findKeyword(statement, actualVerb);
+
+            if(isQuestion(answer))
+            {
+                String wordAfterVerb = wordAfter(answer, actualVerb);
+
+                switch(wordAfterVerb)
+                {
+                    case "I":
+                        invertedVerb = "am";
+                        break;
+                    case "you":
+                        invertedVerb = "are";
+                        break;
+                }
+            }
+            else
+            {
+                String wordBeforeVerb = wordBefore(answer, actualVerb);
+
+                switch(wordBeforeVerb)
+                {
+                    case "I":
+                        invertedVerb = "am";
+                        break;
+                    case "you":
+                        invertedVerb = "are";
+                        break;
+                }
+            }
+
+            String beforeVerb = answer.substring(0, positionOfVerb);
+            String afterVerb = answer.substring(positionOfVerb + actualVerb.length());
+
+            answer = beforeVerb + invertedVerb + afterVerb;
+
+            String placeholder = generateStars(invertedVerb.length());
+            beforeVerb = statement.substring(0, positionOfVerb);
+            afterVerb = statement.substring(positionOfVerb + actualVerb.length());
+
+            statement = beforeVerb + placeholder + afterVerb;
+            statement = statement.trim();
+        }
+
+        return answer;
+    }
+
+    public static int findKeyword(String statement, String goal, int startPos)
+    {
+        int position = statement.toLowerCase().indexOf(goal.toLowerCase(), startPos);
+
+        while(position >= 0)
+        {
+            String before = " ";
+            String after = " ";
+
+            if(position > 0)
+            {
+                before = statement.substring(position - 1, position).toLowerCase();
+            }
+
+            if(position + goal.length() < statement.length())
+            {
+                after = statement.substring(position + goal.length(), position + goal.length() + 1).toLowerCase();
+            }
+
+            //  If before and after aren't letters, we've found the word
+            if(((before.compareTo("a") < 0 ) || (before.compareTo("z") > 0))
+                    && ((after.compareTo("a") < 0 ) || (after.compareTo("z") > 0)))
+            {
+                return position;
+            }
+
+            //  The last position didn't work, so let's find the next, if there is one.
+            position = statement.indexOf(goal.toLowerCase(), position + 1);
+        }
+
+        return -1;
+    }
+
+    public static int findKeyword(String statement, String goal)
+    {
+        return findKeyword(statement, goal, 0);
+    }
+
+
+    public static String findModalAuxiliary(String statement)
+    {
+        for(String word : MODAL_AUXILIARIES)
+        {
+            int indexOfWord = findKeyword(statement, word);
+
+            if(indexOfWord >= 0)
+            {
+                return word;
+            }
+        }
+
+        return generateStars(1000);
+    }
+
+
+    public static boolean containsModalAuxiliary(String statement)
+    {
+        return !findModalAuxiliary(statement).equals(generateStars(1000));
+    }
+
+
+    public static String findQuestionWord(String statement)
+    {
+        for(String word : words)
+        {
+            int indexOfWord = findKeyword(statement, word);
+
+            if(indexOfWord >= 0)
+            {
+                return word;
+            }
+        }
+
+        return generateStars(1000);
+    }
+
+
+    public static boolean containsQuestionWord(String statement)
+    {
+        return !findQuestionWord(statement).equals(generateStars(1000));
+    }
+
+    public static String findSubjectPronoun(String statement)
+    {
+        for(String word : pronoun)
+        {
+            int indexOfWord = findKeyword(statement, word);
+
+            if(indexOfWord >= 0)
+            {
+                return word;
+            }
+        }
+
+        return generateStars(1000);
+    }
+
+
+    public static boolean containsSubjectPronoun(String statement)
+    {
+        return !findSubjectPronoun(statement).equals(generateStars(1000));
+    }
+
+
+    public static String findObjectPronoun(String statement)
+    {
+        for(String word : oPronoun)
+        {
+            String subjectPronoun = findSubjectPronoun(statement);
+            int positionOfSubjectPronoun = findKeyword(statement, subjectPronoun);
+            int positionOfWordAfterSubjectPronoun = findKeyword(statement, word, positionOfSubjectPronoun);
+
+            if(positionOfWordAfterSubjectPronoun >= 0)
+            {
+                return word;
+            }
+        }
+
+        return generateStars(1000);
+    }
+
+
+    public static boolean containsObjectPronoun(String statement)
+    {
+        return !findObjectPronoun(statement).equals(generateStars(1000));
+    }
+
+
+    public static String findBeVerb(String statement)
+    {
+        for(String word : verbs)
+        {
+            int positionOfWord = findKeyword(statement, word);
+
+            if(positionOfWord >= 0)
+            {
+                return word;
+            }
+        }
+
+        return generateStars(1000);
+    }
+
+
+    public static boolean containsBeVerb(String statement)
+    {
+        return !findBeVerb(statement).equals(generateStars(1000));
+    }
+
+    private static String generateStars(int num)
+    {
+        String ans = "";
+
+        for(int i = 0; i < num; i++)
+        {
+            ans += "*";
+        }
+
+        return ans;
+    }
+
+
+    private static int indexOfItemInList(Object[] list, Object item)
+    {
+        return Arrays.asList(list).indexOf(item);
+    }
+
+
+    private static boolean listContainsItem(Object[] list, Object item)
+    {
+        return indexOfItemInList(list, item) >= 0;
+    }
+}
